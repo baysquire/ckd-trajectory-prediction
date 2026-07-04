@@ -1,0 +1,7 @@
+pandas
+numpy
+google-cloud-bigquery
+db-dtypes
+torch
+lightning
+pytorch-forecasting
