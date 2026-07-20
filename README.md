@@ -1,6 +1,7 @@
 # CKD Progression Baselines (Paper 1)
 
 Code for: *Baseline Models for CKD Progression Prediction on MIMIC-IV*.
+Preprint available at: [https://doi.org/10.5281/zenodo.21463230](https://doi.org/10.5281/zenodo.21463230)
 
 Three tasks evaluated with honest baselines:
 - Rapid-progressor identification
