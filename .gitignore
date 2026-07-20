@@ -1,0 +1,10 @@
+data/processed/*.csv
+data/processed/*.parquet
+results/
+**/__pycache__/
+*.pyc
+.venv/
+venv/
+*.ckpt
+tb_logs/
+.ipynb_checkpoints/

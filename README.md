@@ -1,40 +1,50 @@
-# Predicting Chronic Kidney Disease Trajectories using Temporal Fusion Transformers
+# CKD progression baselines (Paper 1)
 
-This repository contains the official implementation of our paper on forecasting eGFR trajectories for Chronic Kidney Disease (CKD) patients using Temporal Fusion Transformers (TFT) on the MIMIC-IV dataset.
+Code for the MIMIC-IV CKD progression paper:
+rapid-progressor ID, multi-horizon eGFR, and survival.
 
-## Overview
-Accurate prediction of CKD progression is critical for timely clinical intervention. We utilize a TFT architecture to handle both static comorbidities and time-varying clinical signals (laboratory results, medication histories) to forecast future eGFR values.
+This repo is only the Paper 1 evals. It does not include the other
+experimental models from the larger research folder.
 
-## Repository Structure
-- `src/data/`: Scripts and BigQuery SQL to extract the CKD cohort and medication history from MIMIC-IV.
-- `src/features/`: Feature engineering pipeline (calculating eGFR using CKD-EPI 2021, rolling stats, lab deltas).
-- `src/models/`: The PyTorch Forecasting implementation of the TFT model, including training loops and persistence baselines.
+## Results (frozen)
 
-## Requirements
-To install the required dependencies:
+Rapid-progressor (test n=1360): logistic AUROC 0.594 vs KFRE-proxy 0.415
+and prior-slope 0.492.
+
+1-step eGFR: XGBoost RMSE 7.42, persistence 7.99, TFT 8.94.
+
+See `docs/PAPER1_NUMBER_FREEZE.md` for the full table.
+
+## Setup
+
 ```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Linux/mac: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage
+## Data
 
-### 1. Data Extraction
-You must have credentialed access to MIMIC-IV on PhysioNet. Authenticate your Google Cloud SDK and run:
-```bash
-python src/data/get_data.py
+MIMIC-IV is not in this repo. After you have PhysioNet access, put
+processed CSVs here:
+
+```text
+data/processed/train.csv
+data/processed/val.csv
+data/processed/test.csv
 ```
 
-### 2. Feature Engineering
-Process the raw extraction into model-ready features:
+Optional: set `NEPHRO_DATA_PATH` to that folder.
+
+## Run
+
 ```bash
-python src/features/build_features.py
+python scripts/reproduce_paper1.py
 ```
 
-### 3. Model Training
-Train the Temporal Fusion Transformer and evaluate against the persistence baseline:
-```bash
-python src/models/train_tft.py
-```
+Outputs go under `results/`.
 
 ## License
-This code is released under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license. It is freely available for academic research and peer review, but commercial use is strictly prohibited. See `LICENSE` for details.
+
+See LICENSE.

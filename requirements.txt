@@ -1,7 +1,9 @@
-pandas
-numpy
-google-cloud-bigquery
-db-dtypes
-torch
-lightning
-pytorch-forecasting
+# what paper 1 actually needs
+numpy>=1.26
+pandas>=2.0
+scikit-learn>=1.4
+xgboost>=2.0
+lightgbm>=4.0
+matplotlib>=3.8
+shap>=0.43
+scikit-survival>=0.23
