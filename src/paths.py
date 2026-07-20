@@ -1,7 +1,8 @@
 """Where the data lives.
 
-Looks in a few usual places so the same scripts work in the
-research folder and in the smaller public repo.
+Looks in a few usual places so the same scripts work when
+the data directory is set via environment variable or placed
+in the default location.
 """
 import os
 
@@ -18,16 +19,8 @@ def find_processed():
     if env and os.path.isdir(env):
         return env
 
-    candidates = [
-        os.path.join(root, "data", "processed"),
-        os.path.join(root, "..", "Medicine_Results", "ckd_tft_results", "processed"),
-    ]
-    for path in candidates:
-        path = os.path.abspath(path)
-        if os.path.isfile(os.path.join(path, "test.csv")):
-            return path
-    # default for the public repo layout
-    return os.path.abspath(candidates[0])
+    default = os.path.join(root, "data", "processed")
+    return os.path.abspath(default)
 
 
 def find_models_dir():
@@ -35,21 +28,9 @@ def find_models_dir():
     env = os.environ.get("NEPHRO_CKPT_DIR")
     if env:
         return env
-    proc = find_processed()
-    # .../processed -> .../models
-    sibling = os.path.abspath(os.path.join(proc, "..", "models"))
-    if os.path.isdir(os.path.dirname(sibling)):
-        return sibling
     return os.path.join(root, "results", "models")
 
 
 def find_reports_dir():
     root = repo_root()
-    proc = find_processed()
-    # Medicine_Results/ckd_tft_results/processed -> Medicine_Results/reports
-    med_root = os.path.abspath(os.path.join(proc, "..", ".."))
-    if os.path.basename(med_root) == "Medicine_Results" or os.path.isdir(
-        os.path.join(med_root, "reports")
-    ):
-        return os.path.join(med_root, "reports")
     return os.path.join(root, "results", "reports")

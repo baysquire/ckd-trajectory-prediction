@@ -67,11 +67,11 @@ def run(proc_dir, out_path, fig_path, horizons=(1, 3, 6, 12)):
             n_estimators=400, max_depth=6, learning_rate=0.05,
             subsample=0.8, colsample_bytree=0.8, min_child_weight=5,
             tree_method="hist", early_stopping_rounds=20,
-            eval_metric="rmse", random_state=42,
+            eval_metric="rmse", random_state=42, missing=np.nan,
         )
-        model.fit(tr[cols].fillna(0), tr[f"egfr_h{h}"],
-                  eval_set=[(va[cols].fillna(0), va[f"egfr_h{h}"])], verbose=False)
-        xgb_pred = model.predict(te[cols].fillna(0))
+        model.fit(tr[cols], tr[f"egfr_h{h}"],
+                  eval_set=[(va[cols], va[f"egfr_h{h}"])], verbose=False)
+        xgb_pred = model.predict(te[cols])
 
         out["horizons"][str(h)] = {
             "n_test": int(len(te)),

@@ -79,10 +79,11 @@ def fit_xgb(train_df, val_df, feature_cols):
         early_stopping_rounds=20,
         eval_metric="rmse",
         random_state=42,
+        missing=np.nan,
     )
     model.fit(
-        train_df[cols].fillna(0), train_df[TARGET],
-        eval_set=[(val_df[cols].fillna(0), val_df[TARGET])],
+        train_df[cols], train_df[TARGET],
+        eval_set=[(val_df[cols], val_df[TARGET])],
         verbose=False,
     )
     return model, cols
@@ -117,7 +118,7 @@ def run(train_path, val_path, test_path, tft_results, out_path):
     model, used_cols = fit_xgb(train_df, val_df, feats)
     if "gender" in test_df.columns:
         test_df["is_female"] = (test_df["gender"] == "F").astype(int)
-    xgb_pred = model.predict(test_df[used_cols].fillna(0))
+    xgb_pred = model.predict(test_df[used_cols])
     models["xgboost"] = metrics(y, xgb_pred)
     models["xgboost"]["rmse_ci"] = boot_ci(y, xgb_pred, rmse)
     models["xgboost"]["r2_ci"] = boot_ci(y, xgb_pred, lambda a, b: r2_score(a, b))

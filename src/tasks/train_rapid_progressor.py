@@ -117,11 +117,20 @@ def run(data_path, out_dir, fig_dir):
     va = df[df["split"] == "val"]
     te = df[df["split"] == "test"]
 
-    Xtr, ytr = tr[cols].fillna(0), tr["rapid"].to_numpy()
-    Xva, yva = va[cols].fillna(0), va["rapid"].to_numpy()
-    Xte, yte = te[cols].fillna(0), te["rapid"].to_numpy()
+    # logistic regression can't handle NaN, so fill with train medians.
+    # tree models handle NaN on their own, so leave those alone.
+    train_medians = tr[cols].median()
+    Xtr_imputed = tr[cols].fillna(train_medians)
+    Xva_imputed = va[cols].fillna(train_medians)
+    Xte_imputed = te[cols].fillna(train_medians)
 
-    scores = {}  # name -> test scores (prob or rank)
+    Xtr_raw, Xva_raw, Xte_raw = tr[cols], va[cols], te[cols]
+    ytr = tr["rapid"].to_numpy()
+    yva = va["rapid"].to_numpy()
+    yte = te["rapid"].to_numpy()
+
+    scores = {}       # name -> test scores (prob or rank)
+    val_scores = {}   # name -> validation scores (for model selection)
     results = {"n": {"train": len(tr), "val": len(va), "test": len(te)},
                "prevalence": round(float(te["rapid"].mean()), 4),
                "models": {}}
@@ -135,40 +144,43 @@ def run(data_path, out_dir, fig_dir):
     results["models"]["kfre_proxy"] = score_block(yte, scores["kfre_proxy"])
     results["models"]["kfre_proxy"]["note"] = "ACR fixed; targets kidney failure not slope"
 
-    # baseline 3: logistic regression
-    scaler = StandardScaler().fit(Xtr)
+    # baseline 3: logistic regression (uses median-imputed data)
+    scaler = StandardScaler().fit(Xtr_imputed)
     logit = LogisticRegression(max_iter=2000, class_weight="balanced")
-    logit.fit(scaler.transform(Xtr), ytr)
-    scores["logistic"] = logit.predict_proba(scaler.transform(Xte))[:, 1]
+    logit.fit(scaler.transform(Xtr_imputed), ytr)
+    val_scores["logistic"] = logit.predict_proba(scaler.transform(Xva_imputed))[:, 1]
+    scores["logistic"] = logit.predict_proba(scaler.transform(Xte_imputed))[:, 1]
     results["models"]["logistic"] = score_block(yte, scores["logistic"], True)
 
-    # model: xgboost
+    # model: xgboost (handles NaN natively)
     xgbc = xgb.XGBClassifier(
         n_estimators=400, max_depth=4, learning_rate=0.05,
         subsample=0.8, colsample_bytree=0.8, min_child_weight=5,
         tree_method="hist", eval_metric="logloss",
-        early_stopping_rounds=30, random_state=42,
+        early_stopping_rounds=30, random_state=42, missing=np.nan,
     )
-    xgbc.fit(Xtr, ytr, eval_set=[(Xva, yva)], verbose=False)
-    scores["xgboost"] = xgbc.predict_proba(Xte)[:, 1]
+    xgbc.fit(Xtr_raw, ytr, eval_set=[(Xva_raw, yva)], verbose=False)
+    val_scores["xgboost"] = xgbc.predict_proba(Xva_raw)[:, 1]
+    scores["xgboost"] = xgbc.predict_proba(Xte_raw)[:, 1]
     results["models"]["xgboost"] = score_block(yte, scores["xgboost"], True)
 
-    # model: lightgbm
+    # model: lightgbm (handles NaN natively)
     lgbc = lgb.LGBMClassifier(
         n_estimators=400, max_depth=4, learning_rate=0.05,
         subsample=0.8, colsample_bytree=0.8, min_child_samples=20,
         random_state=42, verbose=-1,
     )
-    lgbc.fit(Xtr, ytr, eval_set=[(Xva, yva)],
+    lgbc.fit(Xtr_raw, ytr, eval_set=[(Xva_raw, yva)],
              callbacks=[lgb.early_stopping(30, verbose=False)])
-    scores["lightgbm"] = lgbc.predict_proba(Xte)[:, 1]
+    val_scores["lightgbm"] = lgbc.predict_proba(Xva_raw)[:, 1]
+    scores["lightgbm"] = lgbc.predict_proba(Xte_raw)[:, 1]
     results["models"]["lightgbm"] = score_block(yte, scores["lightgbm"], True)
 
-    # pick the best model by test AUROC, then compare it head to head with the
-    # two baselines a clinician would reach for.
+    # pick best model on validation, not test, to keep test set honest.
     best = max(("xgboost", "lightgbm", "logistic"),
-               key=lambda m: results["models"][m]["auroc"])
+               key=lambda m: roc_auc_score(yva, val_scores[m]))
     results["best_model"] = best
+    results["best_model_val_auroc"] = round(float(roc_auc_score(yva, val_scores[best])), 4)
     results["vs_kfre"] = bootstrap_auc_gap(yte, scores[best], scores["kfre_proxy"])
     results["vs_prior_slope"] = bootstrap_auc_gap(yte, scores[best], scores["prior_slope"])
 

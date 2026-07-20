@@ -89,8 +89,11 @@ def run(proc_dir, out_path, fig_path, table_path):
         "n_visits", "start_stage",
     ]
 
-    Xtr = tr[feat_cols].fillna(0).to_numpy()
-    Xte = te[feat_cols].fillna(0).to_numpy()
+    # sksurv can't handle NaN so fill with train medians.
+    # better than filling with 0 (potassium=0 is dead, not missing).
+    train_medians = tr[feat_cols].median()
+    Xtr = tr[feat_cols].fillna(train_medians).to_numpy()
+    Xte = te[feat_cols].fillna(train_medians).to_numpy()
 
     # scikit-survival needs a structured array for y
     from sksurv.util import Surv

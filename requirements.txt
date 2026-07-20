@@ -1,9 +1,10 @@
-# what paper 1 actually needs
-numpy>=1.26
-pandas>=2.0
-scikit-learn>=1.4
-xgboost>=2.0
-lightgbm>=4.0
-matplotlib>=3.8
-shap>=0.43
-scikit-survival>=0.23
+# Paper 1 dependencies
+# Python >= 3.10 required
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.5.1
+xgboost==2.1.4
+lightgbm==4.5.0
+matplotlib==3.9.2
+shap==0.46.0
+scikit-survival==0.23.1

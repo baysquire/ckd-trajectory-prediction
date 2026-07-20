@@ -1,12 +1,26 @@
-"""Run the Paper 1 evals in order.
+"""Run the Paper 1 pipeline.
 
-Put train/val/test.csv where src/paths.py can find them, then:
+If data/processed/ already contains train.csv, val.csv, test.csv, the
+preprocessing step is skipped. Otherwise, it runs the full pipeline from
+the raw MIMIC extract.
 
+Usage:
     python scripts/reproduce_paper1.py
 """
+import os
 import subprocess
 import sys
 import time
+
+
+def _repo_root():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+def _processed_exists():
+    proc = os.path.join(_repo_root(), "data", "processed")
+    env = os.environ.get("NEPHRO_DATA_PATH", proc)
+    return os.path.isfile(os.path.join(env, "test.csv"))
 
 
 STEPS = [
@@ -20,12 +34,31 @@ STEPS = [
 
 
 def main():
-    print("running paper 1 evals")
+    print("Paper 1 reproduction pipeline")
+    print(f"Python: {sys.version}")
+    print(f"Working directory: {os.getcwd()}")
+
+    # optional: run preprocessing if CSVs don't exist yet
+    if not _processed_exists():
+        raw_path = os.path.join(_repo_root(), "data", "raw", "mimic_ckd_cohort.csv")
+        if os.path.isfile(raw_path):
+            print("\n--- preprocessing (raw -> processed) ---")
+            result = subprocess.run(
+                [sys.executable, "-m", "src.data.preprocess"], cwd=_repo_root()
+            )
+            if result.returncode != 0:
+                print("preprocessing failed")
+                sys.exit(1)
+        else:
+            print(f"\nNo processed CSVs found and no raw extract at {raw_path}.")
+            print("See docs/DATA.md for instructions.")
+            sys.exit(1)
+
     failed = []
     for name, cmd in STEPS:
         print(f"\n--- {name} ---")
         t0 = time.time()
-        result = subprocess.run(cmd, cwd=".")
+        result = subprocess.run(cmd, cwd=_repo_root())
         elapsed = time.time() - t0
         if result.returncode != 0:
             print(f"failed: {name}")
@@ -36,7 +69,7 @@ def main():
     if failed:
         print("failed steps:", ", ".join(failed))
         sys.exit(1)
-    print("all done")
+    print("\nall steps completed successfully")
 
 
 if __name__ == "__main__":

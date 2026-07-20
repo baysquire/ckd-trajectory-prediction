@@ -1,15 +1,21 @@
 # What's in this repo
 
-Paper 1 eval code only:
+Paper 1 cohort extraction, preprocessing, and evaluation code:
 
-- leakage audit
-- 1-step baselines
-- rapid-progressor
-- multi-horizon
-- survival
+- Cohort extraction SQL (MIMIC-IV BigQuery)
+- Preprocessing pipeline (outlier removal, imputation, feature engineering, splits)
+- Leakage audit
+- 1-step eGFR baselines
+- Rapid-progressor classification
+- Multi-horizon eGFR forecasting
+- Survival analysis (Cox PH, random survival forest)
 
-No synthetic data. No TFT training. No GNN/RL.
+Not included:
+- TFT training code (TFT results are reported as supplementary context)
+- GNN/RL experiments
+- Synthetic data generation
 
-Put MIMIC CSVs in data/processed/ then run:
+To reproduce:
 
-    python scripts/reproduce_paper1.py
+    python -m src.data.preprocess          # if starting from raw MIMIC extract
+    python scripts/reproduce_paper1.py     # runs all evaluation steps

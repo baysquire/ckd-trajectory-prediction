@@ -1,7 +1,4 @@
-# Paper 1 — Number Freeze (mirror)
-
-**Canonical copy also lives at:** `Medicine_Results/reports/PAPER1_NUMBER_FREEZE.md`  
-**Frozen:** 20 July 2026 after successful `python scripts/reproduce_paper1.py`
+# Paper 1 — Frozen Numbers
 
 ## Headline abstract numbers
 
